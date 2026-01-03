@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Card, Typography, Button, Space, Tag } from 'antd';
 import { ArrowLeftOutlined, HomeOutlined, DollarOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import PropertyFilter from '../../components/PropertyFilter';
 import 'leaflet/dist/leaflet.css';
 
 const { Title, Text } = Typography;
@@ -25,6 +26,7 @@ const RealEstateMap = () => {
   const [isClient, setIsClient] = useState(false);
   const [MapComponents, setMapComponents] = useState<any>(null);
   const mapRef = useRef<HTMLDivElement>(null);
+  const [filters, setFilters] = useState<any>({});
 
   useEffect(() => {
     setIsClient(true);
@@ -149,7 +151,144 @@ const RealEstateMap = () => {
     },
   ]);
 
-  const filteredProperties = properties.filter((p) => p.type === type);
+  // Helper function to extract numeric price from string
+  const extractPrice = (priceStr: string): number => {
+    // Remove all non-digit characters except commas and periods
+    const cleaned = priceStr.replace(/[^\d,.]/g, '');
+    // Remove commas and convert to number
+    return parseFloat(cleaned.replace(/,/g, '')) || 0;
+  };
+
+  // Helper function to extract numeric area from string
+  const extractArea = (areaStr: string): number => {
+    const match = areaStr.match(/(\d+(?:\.\d+)?)/);
+    return match ? parseFloat(match[1]) : 0;
+  };
+
+  // Helper function to check if location matches district
+  const matchesDistrict = (location: string, districtValue: string): boolean => {
+    if (!districtValue) return true;
+    
+    const districtMap: { [key: string]: string } = {
+      '23': 'Багануур',
+      '24': 'Багахангай',
+      '25': 'Баянгол',
+      '26': 'Баянзүрх',
+      '27': 'Налайх',
+      '28': 'Сонгино хайрхан',
+      '29': 'Сүхбаатар',
+      '30': 'Хан-Уул',
+      '31': 'Чингэлтэй',
+    };
+    
+    const districtName = districtMap[districtValue];
+    return districtName ? location.includes(districtName) : true;
+  };
+
+  // Helper function to check if property type matches
+  const matchesPropertyType = (title: string, propertyTypeValue: string): boolean => {
+    if (!propertyTypeValue) return true;
+    
+    const typeMap: { [key: string]: string[] } = {
+      '1': ['Орон сууц', 'Ордон сууц'],
+      '2': ['Хашаа байшин'],
+      '3': ['Хаус'],
+      '4': ['Худалдаа үйлчилгээний талбай'],
+      '5': ['Зогсоол'],
+      '7': ['Газар'],
+      '9': ['Хотхон'],
+      '36': ['Зуслан'],
+      '37': ['Обьект'],
+      '50': ['Оффис'],
+    };
+    
+    const types = typeMap[propertyTypeValue];
+    return types ? types.some(t => title.includes(t)) : true;
+  };
+
+  // Filter properties based on all filter criteria
+  const filteredProperties = useMemo(() => {
+    return properties.filter((property) => {
+      // Filter by type (sale/rent)
+      if (property.type !== type) return false;
+
+      // Keyword filter
+      if (filters.keyword) {
+        const keyword = filters.keyword.toLowerCase();
+        const matchesKeyword =
+          property.title.toLowerCase().includes(keyword) ||
+          property.location.toLowerCase().includes(keyword) ||
+          property.id.toLowerCase().includes(keyword);
+        if (!matchesKeyword) return false;
+      }
+
+      // Property type filter
+      if (filters.propertyType) {
+        if (!matchesPropertyType(property.title, filters.propertyType)) return false;
+      }
+
+      // Status filter (should match the type from URL, but allow override)
+      if (filters.status) {
+        const statusType = filters.status === '1' ? 'sale' : 'rent';
+        if (property.type !== statusType) return false;
+      }
+
+      // Price filter
+      const propertyPrice = extractPrice(property.price);
+      if (filters.minPrice) {
+        const minPrice = parseFloat(filters.minPrice.replace(/,/g, '')) || 0;
+        if (propertyPrice < minPrice) return false;
+      }
+      if (filters.maxPrice) {
+        const maxPrice = parseFloat(filters.maxPrice.replace(/,/g, '')) || 0;
+        if (propertyPrice > maxPrice) return false;
+      }
+
+      // District filter
+      if (filters.district) {
+        if (!matchesDistrict(property.location, filters.district)) return false;
+      }
+
+      // Area filter
+      const propertyArea = extractArea(property.area);
+      if (filters.minArea) {
+        const minArea = parseFloat(filters.minArea);
+        if (propertyArea < minArea) return false;
+      }
+      if (filters.maxArea) {
+        const maxArea = filters.maxArea === '100+' ? Infinity : parseFloat(filters.maxArea);
+        if (propertyArea > maxArea) return false;
+      }
+
+      // Bedrooms filter
+      if (filters.bedrooms) {
+        if (!property.bedrooms) return false;
+        if (filters.bedrooms === '5+') {
+          if (property.bedrooms < 5) return false;
+        } else {
+          const bedroomsFilter = parseFloat(filters.bedrooms);
+          if (property.bedrooms < bedroomsFilter) return false;
+        }
+      }
+
+      // Bathrooms filter
+      if (filters.bathrooms) {
+        if (!property.bathrooms) return false;
+        if (filters.bathrooms === '5+') {
+          if (property.bathrooms < 5) return false;
+        } else {
+          const bathroomsFilter = parseFloat(filters.bathrooms);
+          if (property.bathrooms < bathroomsFilter) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [properties, type, filters]);
+
+  const handleFilter = (filterValues: any) => {
+    setFilters(filterValues);
+  };
 
   const handlePropertyClick = (propertyId: string) => {
     navigate(`/user/property/${propertyId}`);
@@ -165,6 +304,8 @@ const RealEstateMap = () => {
           {type === 'sale' ? 'Худалдаа' : 'Түрээс'} - Газрын зураг
         </Title>
       </Space>
+
+      <PropertyFilter type={type} onFilter={handleFilter} />
 
       <Card
         style={{ height: 'calc(100vh - 200px)', minHeight: '600px' }}

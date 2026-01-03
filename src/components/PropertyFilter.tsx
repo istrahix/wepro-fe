@@ -126,7 +126,7 @@ const PropertyFilter = ({ type, onFilter }: PropertyFilterProps) => {
         <div style={{ background: '#f5f5f5', padding: '16px 24px', borderTop: '1px solid #e8e8e8' }}>
           <Collapse
             ghost
-            defaultActiveKey={['1']}
+            // defaultActiveKey={['1']}
             expandIcon={({ isActive }) => <DownOutlined rotate={isActive ? 180 : 0} />}
           >
             <Panel
