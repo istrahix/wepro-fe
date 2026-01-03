@@ -1,42 +1,24 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Button Primary Color - Global Styles */
+.ant-btn-primary {
+  background-color: #305082 !important;
+  border-color: #305082 !important;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.ant-btn-primary:hover:not(:disabled) {
+  background-color: #3d5f9a !important;
+  border-color: #3d5f9a !important;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.ant-btn-primary:active:not(:disabled),
+.ant-btn-primary:focus:not(:disabled) {
+  background-color: #264a6e !important;
+  border-color: #264a6e !important;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.ant-btn-primary:disabled {
+  background-color: #6b7a94 !important;
+  border-color: #6b7a94 !important;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
