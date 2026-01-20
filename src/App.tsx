@@ -21,7 +21,7 @@ import './App.css';
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/wepro-fe">
       <ScrollToTop />
       <Routes>
         {/* Root redirects to user home */}
